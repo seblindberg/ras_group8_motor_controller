@@ -1,2 +1,3 @@
-# ras_group8_motor_controller
-ROS node handling motor control
+# Motor Controller
+
+This ROS package implements a motor controller for the RAS 2017 course.
