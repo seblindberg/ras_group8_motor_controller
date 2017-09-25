@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <ras_group8_motor_controller/motor_controller.hpp>
+#include <ras_group8_motor_controller/MotorController.hpp>
 
 int main(int argc, char **argv)
 {

@@ -1,5 +1,4 @@
-#ifndef RAS_GROUP8_MOTOR_CONTROLLER
-#define RAS_GROUP8_MOTOR_CONTROLLER
+#pragma once
 
 #include <ros/ros.h>
 #include <string.h>
@@ -26,5 +25,3 @@ namespace ras_group8_motor_controller
   };
 
 }
-
-#endif // RAS_GROUP8_MOTOR_CONTROLLER
