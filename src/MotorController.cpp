@@ -4,7 +4,7 @@
 namespace ras_group8_motor_controller
 {
   MotorController::MotorController(ros::NodeHandle &nodeHandle)
-    : n_(nodeHandle);
+    : nodeHandle_(nodeHandle)
   {
     if (!readParameters()) {
       ROS_ERROR("Could not read parameters.");

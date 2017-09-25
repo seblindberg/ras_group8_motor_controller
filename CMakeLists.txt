@@ -25,7 +25,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}
 	src/motor_controller_node.cpp
-	src/motor_controller.cpp
+	src/MotorController.cpp
 )
 
 add_dependencies(${PROJECT_NAME}
@@ -36,7 +36,7 @@ target_link_libraries(${PROJECT_NAME}
 	${catkin_LIBRARIES}
 )
 
-#catkin_add_gtest(motor_controller_tests test/motor_controller_test.cpp src/motor_controller.cpp)
+#catkin_add_gtest(motor_controller_tests test/test_motor_controller.cpp src/MotorController.cpp)
 
 # Make main executable
 install(

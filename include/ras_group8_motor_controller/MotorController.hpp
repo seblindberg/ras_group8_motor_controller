@@ -18,7 +18,7 @@ namespace ras_group8_motor_controller
   
   private:
     
-    ros::NodeHandle& n_;
+    ros::NodeHandle& nodeHandle_;
     
     std::string subscriberTopic_;
   
