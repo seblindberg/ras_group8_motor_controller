@@ -1,4 +1,4 @@
-#include <ras_group8_motor_controller/motor_controller.h>
+#include <ras_group8_motor_controller/motor_controller.hpp>
 #include <string>
 
 namespace ras_group8_motor_controller
