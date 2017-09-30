@@ -1,1 +1,7 @@
-subscriber_topic: /temperature
+encoder_topic: /encoder
+encoder_tics_per_rev: 300
+velocity_topic: volecity
+gain:
+  p: 10.0
+  i: 10.0
+  d: 0.001
