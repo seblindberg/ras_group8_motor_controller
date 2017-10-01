@@ -5,6 +5,7 @@
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Float32.h>
 #include <phidgets/motor_encoder.h>
+#include <ras_group8_motor_controller/PIDController.hpp>
 
 namespace ras_group8_motor_controller
 {
@@ -27,7 +28,7 @@ public:
 private:
   void wheelEncoderCallback(const phidgets::motor_encoder& msg);
   
-  void velocityCallback(const std_msgs::Float32& msg);
+  void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
   
   bool reloadCallback(std_srvs::Trigger::Request& request,
                       std_srvs::Trigger::Response& response);
@@ -35,6 +36,9 @@ private:
   template<class M, class T>
   void updateSubscriber(ros::Subscriber& sub, const std::string newTopic,
                         void(T::*callback)(M));
+  
+  template<class M>
+  void updatePublisher(ros::Publisher& pub, const std::string newTopic);
   
   /* Node handle
    */
@@ -47,6 +51,7 @@ private:
   
   /* Publishers
    */
+  ros::Publisher motorPublisher_;
   
   /* Services
    */
@@ -56,10 +61,15 @@ private:
    */
   std::string wheelEncoderTopic_;
   std::string velocityTopic_;
+  std::string motorTopic_;
   
-  double gainP_;
-  double gainI_;
-  double gainD_;
+  double encoderTicsPerRevolution_;
+  
+  /**/
+  PIDController pidController_;
+  double velocityTarget_;
+  
+  phidgets::motor_encoder encoderMsgPrev_;
 };
 
 }

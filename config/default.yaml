@@ -5,3 +5,5 @@ gain:
   p: 10.0
   i: 10.0
   d: 0.001
+output_min: -255.0
+output_max: 255.0

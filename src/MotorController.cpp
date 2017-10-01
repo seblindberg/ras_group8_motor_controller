@@ -25,17 +25,39 @@ MotorController::~MotorController()
 
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
+  double velocity;
+  double time = ros::Time::now().toSec();
+  double dt;
+  std_msgs::Float32 motorMsg;
+  
+  dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+  /* Calculate wheel velocity */
+  velocity = (msg.count - encoderMsgPrev_.count) / dt;
+  
+  /* Update controller */
+  motorMsg.data =
+    pidController_.update(velocity, velocityTarget_, dt);
+  
+  /* Set new motor value */
+  motorPublisher_.publish(motorMsg);
+  
+  /* Store the current message */
+  std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
 }
 
-void MotorController::velocityCallback(const std_msgs::Float32& msg)
+void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
 {
+  std_msgs::Float32 msg = *ptr;
+  
   ROS_INFO("New velocity: %f", msg.data);
+  
+  velocityTarget_ = msg.data;
 }
 
 template<class M, class T>
 void MotorController::updateSubscriber(ros::Subscriber& sub, const std::string newTopic, void(T::*callback)(M))
 {
-  if (sub) {
+  if (NULL != sub) {
     /* Check if the topic has changed */
     if (sub.getTopic().compare(newTopic) == 0) {
       return;
@@ -45,6 +67,22 @@ void MotorController::updateSubscriber(ros::Subscriber& sub, const std::string n
   }
   
   sub = nodeHandle_.subscribe(newTopic, 1, callback, this);
+}
+
+template<class M>
+void MotorController::updatePublisher(ros::Publisher& pub,
+                                      const std::string newTopic)
+{
+  if (NULL != pub) {
+    /* Check if the topic has changed */
+    if (pub.getTopic().compare(newTopic) == 0) {
+      return;
+    }
+
+    pub.shutdown();
+  }
+
+  pub = nodeHandle_.advertise<M>(newTopic, 1);
 }
 
 /**
@@ -64,6 +102,8 @@ bool MotorController::reload()
                    
   updateSubscriber(velocitySubscriber_, velocityTopic_,
                    &MotorController::velocityCallback);
+
+  updatePublisher<std_msgs::Float32>(motorPublisher_, motorTopic_);
 }
 
 bool MotorController::reloadCallback(std_srvs::Trigger::Request& request,
@@ -81,6 +121,12 @@ bool MotorController::reloadCallback(std_srvs::Trigger::Request& request,
 
 bool MotorController::readParameters()
 {
+  double gainP;
+  double gainI;
+  double gainD;
+  double outMin;
+  double outMax;
+  
   if (!nodeHandle_.getParam("encoder_topic", wheelEncoderTopic_))
     return false;
   ROS_INFO("P: wheelEncoderTopic_ = %s", wheelEncoderTopic_.c_str());
@@ -89,17 +135,32 @@ bool MotorController::readParameters()
     return false;
   ROS_INFO("P: velocityTopic_ = %s", velocityTopic_.c_str());
   
-  if (!nodeHandle_.getParam("gain/p", gainP_))
+  if (!nodeHandle_.getParam("gain/p", gainP))
     return false;
-  ROS_INFO("P: gainP_ = %f", gainP_);
+  ROS_INFO("P: gainP = %f", gainP);
   
-  if (!nodeHandle_.getParam("gain/i", gainI_))
+  if (!nodeHandle_.getParam("gain/i", gainI))
     return false;
-  ROS_INFO("P: gainI_ = %f", gainI_);
+  ROS_INFO("P: gainI = %f", gainI);
   
-  if (!nodeHandle_.getParam("gain/d", gainD_))
+  if (!nodeHandle_.getParam("gain/d", gainD))
     return false;
-  ROS_INFO("P: gainD_ = %f", gainD_);
+  ROS_INFO("P: gainD = %f", gainD);
+  
+  if (!nodeHandle_.getParam("output_min", outMin))
+    return false;
+  ROS_INFO("P: outMin = %f", outMin);
+  
+  if (!nodeHandle_.getParam("output_max", outMax))
+    return false;
+  ROS_INFO("P: outMax = %f", outMax);
+  
+  if (!nodeHandle_.getParam("encoder_tics_per_rev", encoderTicsPerRevolution_))
+    return false;
+  ROS_INFO("P: encoderTicsPerRevolution_ = %f", encoderTicsPerRevolution_);
+  
+  /* Update the PID parameters */
+  pidController_.updateParams(gainP, gainI, gainD, outMin, outMax);
   
   return true;
 }

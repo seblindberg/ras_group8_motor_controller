@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ras_group8_motor_controller)
 
+#set(ROS_BUILD_TYPE Debug)
+
 find_package(catkin REQUIRED
 	COMPONENTS
 	roscpp
@@ -29,6 +31,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}
 	src/motor_controller_node.cpp
+	src/PIDController.cpp
 	src/MotorController.cpp
 )
 
