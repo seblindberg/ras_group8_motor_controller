@@ -30,17 +30,16 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   double dt;
   std_msgs::Float32 motorMsg;
   
+  /* Calculate delta time */
   dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
   /* Calculate wheel velocity */
-  velocity = (msg.count - encoderMsgPrev_.count) / dt;
-  
+  /* TODO: Convert to a multiplication instead of a division */
+  velocity = (msg.count - encoderMsgPrev_.count) / encoderTicsPerRevolution_ / dt;
   /* Update controller */
   motorMsg.data =
     pidController_.update(velocity, velocityTarget_, dt);
-  
   /* Set new motor value */
   motorPublisher_.publish(motorMsg);
-  
   /* Store the current message */
   std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
 }
