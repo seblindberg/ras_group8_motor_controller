@@ -34,7 +34,8 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
   /* Calculate wheel velocity */
   /* TODO: Convert to a multiplication instead of a division */
-  velocity = (msg.count - encoderMsgPrev_.count) / encoderTicsPerRevolution_ / dt;
+  velocity = (msg.count - encoderMsgPrev_.count) /
+              encoderTicsPerRevolution_ / dt;
   /* Update controller */
   motorMsg.data =
     pidController_.update(velocity, velocityTarget_, dt);
