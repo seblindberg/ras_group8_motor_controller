@@ -40,6 +40,13 @@ private:
   template<class M>
   void updatePublisher(ros::Publisher& pub, const std::string newTopic);
   
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+  /* Optional method that publishes the pid controller state to the three fixed topics reference,
+   * input and output.
+   */
+  void publishPidState(double reference, double input, double output);
+#endif
+  
   /* Node handle
    */
   ros::NodeHandle& nodeHandle_;
@@ -52,6 +59,12 @@ private:
   /* Publishers
    */
   ros::Publisher motorPublisher_;
+  
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+  ros::Publisher pidReferencePublisher_;
+  ros::Publisher pidInputPublisher_;
+  ros::Publisher pidOutputPublisher_;
+#endif
   
   /* Services
    */
