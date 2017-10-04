@@ -1,4 +1,5 @@
 #include <ras_group8_motor_controller/PIDController.hpp>
+#include <ros/ros.h>
 
 namespace ras_group8_motor_controller
 {
