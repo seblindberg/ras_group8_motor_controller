@@ -1,4 +1,5 @@
-encoder_topic: /encoder
+motor_topic: /motorcontrol/cmd_vel
+encoder_topic: /motorcontrol/encoder
 encoder_tics_per_rev: 300
 velocity_topic: volecity
 gain:
