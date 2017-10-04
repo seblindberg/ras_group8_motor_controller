@@ -161,6 +161,10 @@ bool MotorController::readParameters()
   double outMin;
   double outMax;
   
+  if (!nodeHandle_.getParam("motor_topic", motorTopic_))
+    return false;
+  ROS_INFO("P: motorTopic_ = %s", motorTopic_.c_str());
+  
   if (!nodeHandle_.getParam("encoder_topic", wheelEncoderTopic_))
     return false;
   ROS_INFO("P: wheelEncoderTopic_ = %s", wheelEncoderTopic_.c_str());
