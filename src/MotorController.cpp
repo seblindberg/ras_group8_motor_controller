@@ -62,9 +62,11 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   
   /* Calculate delta time */
   dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+  ROS_INFO("dt = %f", dt);
+  
   /* Calculate wheel velocity */
   /* TODO: Convert to a multiplication instead of a division */
-  velocity = (msg.count - encoderMsgPrev_.count) /
+  velocity = (double)(msg.count - encoderMsgPrev_.count) /
               encoderTicsPerRevolution_ / dt;
   /* Update controller */
   motorMsg.data =
