@@ -54,6 +54,7 @@ void PIDController::updateParams(double gainP, double gainI, double gainD,
 
 void PIDController::reset()
 {
+  ROS_INFO("Clearing the integral error");
   integral_ = 0.0;
 }
 

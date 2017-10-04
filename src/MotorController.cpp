@@ -75,6 +75,7 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
     
   } else {
     encoderCallbackInitialized_ = true;
+    pidController_.reset();
   }
   
   /* Store the current message */
