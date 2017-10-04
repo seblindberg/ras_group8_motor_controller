@@ -201,6 +201,7 @@ bool MotorController::readParameters()
   
   /* Update the PID parameters */
   pidController_.updateParams(gainP, gainI, gainD, outMin, outMax);
+  pidController_.reset();
   
   return true;
 }
