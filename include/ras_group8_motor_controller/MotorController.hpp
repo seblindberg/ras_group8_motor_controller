@@ -83,6 +83,7 @@ private:
   /**/
   PIDController pidController_;
   double velocityTarget_;
+  bool encoderCallbackInitialized_;
   
   phidgets::motor_encoder encoderMsgPrev_;
 };

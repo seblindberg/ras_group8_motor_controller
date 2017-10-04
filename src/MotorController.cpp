@@ -4,7 +4,7 @@ namespace ras_group8_motor_controller
 {
 
 MotorController::MotorController(ros::NodeHandle &nodeHandle)
-  : nodeHandle_(nodeHandle)
+  : nodeHandle_(nodeHandle), encoderCallbackInitialized_(false)
 {
   if (!reload()) {
     ros::requestShutdown();
@@ -56,22 +56,27 @@ void MotorController::publishPidState(double reference, double input, double out
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
   double velocity;
-  double time = ros::Time::now().toSec();
   double dt;
   std_msgs::Float32 motorMsg;
   
-  /* Calculate delta time */
-  dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+  if (encoderCallbackInitialized_) {
+    /* Calculate delta time */
+    dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+    
+    /* Calculate wheel velocity */
+    /* TODO: Convert to a multiplication instead of a division */
+    velocity = (double)(msg.count - encoderMsgPrev_.count) /
+                encoderTicsPerRevolution_ / dt;
+    /* Update controller */
+    motorMsg.data =
+      pidController_.update(velocity, velocityTarget_, dt);
+    /* Set new motor value */
+    motorPublisher_.publish(motorMsg);
+    
+  } else {
+    encoderCallbackInitialized_ = true;
+  }
   
-  /* Calculate wheel velocity */
-  /* TODO: Convert to a multiplication instead of a division */
-  velocity = (double)(msg.count - encoderMsgPrev_.count) /
-              encoderTicsPerRevolution_ / dt;
-  /* Update controller */
-  motorMsg.data =
-    pidController_.update(velocity, velocityTarget_, dt);
-  /* Set new motor value */
-  motorPublisher_.publish(motorMsg);
   /* Store the current message */
   std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
   
@@ -140,6 +145,8 @@ bool MotorController::reload()
                    &MotorController::velocityCallback);
 
   updatePublisher<std_msgs::Float32>(motorPublisher_, motorTopic_);
+  
+  encoderCallbackInitialized_ = false;
 }
 
 bool MotorController::reloadCallback(std_srvs::Trigger::Request& request,
