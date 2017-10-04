@@ -7,6 +7,8 @@
 #include <phidgets/motor_encoder.h>
 #include <ras_group8_motor_controller/PIDController.hpp>
 
+#define RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID 1
+
 namespace ras_group8_motor_controller
 {
 

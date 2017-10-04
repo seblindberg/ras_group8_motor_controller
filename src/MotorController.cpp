@@ -23,6 +23,7 @@ MotorController::MotorController(ros::NodeHandle &nodeHandle)
     pidReferencePublisher_ = nodeHandle_.advertise<std_msgs::Float32>("reference", 1);
     pidInputPublisher_        = nodeHandle_.advertise<std_msgs::Float32>("input", 1);
     pidOutputPublisher_     = nodeHandle_.advertise<std_msgs::Float32>("output", 1);
+  ROS_INFO("Compiled with log output.");
 #endif
   
   
