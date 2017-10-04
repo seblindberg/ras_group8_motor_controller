@@ -1,10 +1,10 @@
 motor_topic: /motorcontrol/cmd_vel
 encoder_topic: /motorcontrol/encoder
-encoder_tics_per_rev: 300
+encoder_tics_per_rev: 3591.84
 velocity_topic: volecity
 gain:
   p: 10.0
-  i: 10.0
-  d: 0.001
+  i: 0.0
+  d: 0.0
 output_min: -255.0
 output_max: 255.0
