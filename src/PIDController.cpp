@@ -6,9 +6,9 @@ namespace ras_group8_motor_controller
 PIDController::PIDController(double gainP, double gainI, double gainD,
                              double outMin, double outMax)
   : gainP_(gainP), gainI_(gainI), gainD_(gainD),
-    outMin_(outMin), outMax_(outMax),
-    integral_(0.0)
+    outMin_(outMin), outMax_(outMax)
 {
+  integral_ = 0;
 }
 
 PIDController::~PIDController()
