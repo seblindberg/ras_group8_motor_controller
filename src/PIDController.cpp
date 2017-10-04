@@ -27,6 +27,8 @@ double PIDController::update(double value, double target, double dt)
   
   output = gainP_ * error + gainI_ * integral_ + gainD_ * derivative;
   
+  ROS_INFO("e = %f, i = %f, d = %f", error, integral_, derivative);
+  
   /* Fit the output signal between outMax and outMin */
   if (output > outMax_) {
     output = outMax_;
