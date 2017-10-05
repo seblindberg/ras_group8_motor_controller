@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ras_group8_motor_controller)
 
-#set(ROS_BUILD_TYPE Debug)
+set(RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID 1)
 
 find_package(catkin REQUIRED
 	COMPONENTS

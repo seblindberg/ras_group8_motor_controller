@@ -16,6 +16,17 @@ MotorController::MotorController(ros::NodeHandle &nodeHandle)
     nodeHandle_.advertiseService("reload", &MotorController::reloadCallback,
                                  this);
   
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+  /* Setup logger outputs here
+    *  Their enpoints are not configurable
+   */
+    pidReferencePublisher_ = nodeHandle_.advertise<std_msgs::Float32>("reference", 1);
+    pidInputPublisher_        = nodeHandle_.advertise<std_msgs::Float32>("input", 1);
+    pidOutputPublisher_     = nodeHandle_.advertise<std_msgs::Float32>("output", 1);
+  ROS_INFO("Compiled with log output.");
+#endif
+  
+  
   ROS_INFO("Successfully launched node.");
 }
 
@@ -23,26 +34,51 @@ MotorController::~MotorController()
 {
 }
 
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+  /* Optional method that publishes the pid controller state to the three fixed topics reference,
+   * input and output.
+   */
+void MotorController::publishPidState(double reference, double input, double output)
+{
+  std_msgs::Float32 msg;
+  
+  msg.data = reference;
+  pidReferencePublisher_.publish(msg);
+  
+  msg.data = input;
+  pidInputPublisher_.publish(msg);
+  
+  msg.data = output;
+  pidOutputPublisher_.publish(msg);
+}
+#endif
+
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
   double velocity;
-  double time = ros::Time::now().toSec();
   double dt;
   std_msgs::Float32 motorMsg;
   
   /* Calculate delta time */
   dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+  
   /* Calculate wheel velocity */
   /* TODO: Convert to a multiplication instead of a division */
-  velocity = (msg.count - encoderMsgPrev_.count) /
+  velocity = (double)(msg.count - encoderMsgPrev_.count) /
               encoderTicsPerRevolution_ / dt;
   /* Update controller */
   motorMsg.data =
     pidController_.update(velocity, velocityTarget_, dt);
   /* Set new motor value */
   motorPublisher_.publish(motorMsg);
+    
   /* Store the current message */
   std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
+  
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+  /* .Publish the internal PID state */
+  publishPidState(velocityTarget_, velocity, motorMsg.data);
+#endif
 }
 
 void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
