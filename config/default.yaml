@@ -1,6 +1,5 @@
 motor_topic: /motorcontrol/cmd_vel
 encoder_topic: /motorcontrol/encoder
-encoder_tics_per_rev: 897.96
 velocity_topic: volecity
 gain:
   p: 20.0

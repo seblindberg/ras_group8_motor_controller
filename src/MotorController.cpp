@@ -195,7 +195,7 @@ bool MotorController::readParameters()
     return false;
   ROS_INFO("P: outMax = %f", outMax);
   
-  if (!nodeHandle_.getParam("encoder_tics_per_rev", encoderTicsPerRevolution_))
+  if (!nodeHandle_.getParam("/platform/wheel_encoder_tics_per_rev", encoderTicsPerRevolution_))
     return false;
   ROS_INFO("P: encoderTicsPerRevolution_ = %f", encoderTicsPerRevolution_);
   
