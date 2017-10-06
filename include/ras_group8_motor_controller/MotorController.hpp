@@ -79,10 +79,12 @@ private:
   std::string motorTopic_;
   
   double encoderTicsPerRevolution_;
+  ros::Duration velocityExpireTimeout_;
   
   /**/
   PIDController pidController_;
   double velocityTarget_;
+  ros::Time velocityTargetExpireTime_;
   
   phidgets::motor_encoder encoderMsgPrev_;
 };

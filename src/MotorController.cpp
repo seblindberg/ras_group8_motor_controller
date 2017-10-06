@@ -66,6 +66,13 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   /* TODO: Convert to a multiplication instead of a division */
   velocity = (double)(msg.count - encoderMsgPrev_.count) /
               encoderTicsPerRevolution_ / dt;
+              
+  /* Check that the set velocity has not expired */
+  if (velocityTargetExpireTime_ < msg.header.stamp) {
+    ROS_INFO("No new velocity setting for a while. Setting to zero.");
+    velocityTarget_ = 0.0;
+  }
+              
   /* Update controller */
   motorMsg.data =
     pidController_.update(velocity, velocityTarget_, dt);
@@ -86,6 +93,8 @@ void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
   std_msgs::Float32 msg = *ptr;
   
   ROS_INFO("New velocity: %f", msg.data);
+  /* Store the expiration time of the velocity */
+  velocityTargetExpireTime_ = ros::Time::now() + velocityExpireTimeout_;
   
   velocityTarget_ = msg.data;
 }
@@ -162,6 +171,7 @@ bool MotorController::readParameters()
   double gainD;
   double outMin;
   double outMax;
+  double velocityExpireTimeout;
   
   if (!nodeHandle_.getParam("motor_topic", motorTopic_))
     return false;
@@ -199,9 +209,16 @@ bool MotorController::readParameters()
     return false;
   ROS_INFO("P: encoderTicsPerRevolution_ = %f", encoderTicsPerRevolution_);
   
+  if (!nodeHandle_.getParam("velocity_timeout", velocityExpireTimeout))
+    return false;
+  ROS_INFO("P: velocityExpireTimeout = %f", velocityExpireTimeout);
+  
   /* Update the PID parameters */
   pidController_.updateParams(gainP, gainI, gainD, outMin, outMax);
   pidController_.reset();
+  
+  /* Wrap the expire timeout in a duration */
+  velocityExpireTimeout_ = ros::Duration(velocityExpireTimeout);
   
   return true;
 }
