@@ -1,6 +1,6 @@
 <package>
  <name>ras_group8_motor_controller</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>
     Closed loop motor controller.
   </description>
