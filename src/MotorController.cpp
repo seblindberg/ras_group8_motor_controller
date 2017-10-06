@@ -15,6 +15,8 @@ MotorController::MotorController(ros::NodeHandle &nodeHandle)
   reloadService_ =
     nodeHandle_.advertiseService("reload", &MotorController::reloadCallback,
                                  this);
+                                 
+  wheelEncoderCallback_ = &MotorController::wheelEncoderCallback;
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
   /* Setup logger outputs here
@@ -52,6 +54,17 @@ void MotorController::publishPidState(double reference, double input, double out
   pidOutputPublisher_.publish(msg);
 }
 #endif
+
+void MotorController::wheelEncoderCallbackOneshot(const phidgets::motor_encoder& msg)
+{
+  /* Store the current message */
+  std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
+  
+  /* Arm the regular callback */
+  wheelEncoderCallback_ = &MotorController::wheelEncoderCallback;
+  updateSubscriber(wheelEncoderSubscriber_, wheelEncoderTopic_,
+                   wheelEncoderCallback_);
+}
 
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
@@ -143,7 +156,7 @@ bool MotorController::reload()
   
   /* Re-subscribe to topics */
   updateSubscriber(wheelEncoderSubscriber_, wheelEncoderTopic_,
-                   &MotorController::wheelEncoderCallback);
+                   wheelEncoderCallback_);
                    
   updateSubscriber(velocitySubscriber_, velocityTopic_,
                    &MotorController::velocityCallback);

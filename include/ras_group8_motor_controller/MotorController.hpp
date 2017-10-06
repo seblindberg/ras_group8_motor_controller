@@ -28,6 +28,7 @@ public:
   bool reload();
 
 private:
+  void wheelEncoderCallbackOneshot(const phidgets::motor_encoder& msg);
   void wheelEncoderCallback(const phidgets::motor_encoder& msg);
   
   void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
@@ -81,11 +82,12 @@ private:
   double encoderTicsPerRevolution_;
   ros::Duration velocityExpireTimeout_;
   
-  /**/
+  /* Variables */
   PIDController pidController_;
   double velocityTarget_;
   ros::Time velocityTargetExpireTime_;
-  
+  /* Store a pointer to the current encoder callback in use */
+  void (MotorController::*wheelEncoderCallback_)(const phidgets::motor_encoder&);
   phidgets::motor_encoder encoderMsgPrev_;
 };
 
