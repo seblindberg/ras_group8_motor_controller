@@ -4,10 +4,10 @@
 namespace ras_group8_motor_controller
 {
 
-PIDController::PIDController(double gainP, double gainI, double gainD,
-                             double outMin, double outMax)
-  : gainP_(gainP), gainI_(gainI), gainD_(gainD),
-    outMin_(outMin), outMax_(outMax)
+PIDController::PIDController(double gain_p, double gain_i, double gain_d,
+                             double out_min, double out_max)
+  : gain_p_(gain_p), gain_i_(gain_i), gain_d_(gain_d),
+    out_min_(out_min), out_max_(out_max)
 {
   integral_ = 0;
 }
@@ -24,32 +24,32 @@ double PIDController::update(double value, double target, double dt)
     
   error = target - value;
   integral_ += error * dt;
-  derivative = (error - errorPrev_) / dt;
+  derivative = (error - error_prev_) / dt;
   
-  output = gainP_ * error + gainI_ * integral_ + gainD_ * derivative;
+  output = gain_p_ * error + gain_i_ * integral_ + gain_d_ * derivative;
   
   ROS_INFO("e = %f, i = %f, d = %f", error, integral_, derivative);
   
-  /* Fit the output signal between outMax and outMin */
-  if (output > outMax_) {
-    output = outMax_;
-  } else if (output < outMin_) {
-    output = outMin_;
+  /* Fit the output signal between out_max and out_min */
+  if (output > out_max_) {
+    output = out_max_;
+  } else if (output < out_min_) {
+    output = out_min_;
   }
   
-  errorPrev_ = error;
+  error_prev_ = error;
   
   return output;
 }
 
-void PIDController::updateParams(double gainP, double gainI, double gainD,
-                                 double outMin, double outMax)
+void PIDController::updateParams(double gain_p, double gain_i, double gain_d,
+                                 double out_min, double out_max)
 {
-  gainP_ = gainP;
-  gainI_ = gainI;
-  gainD_ = gainD;
-  outMin_ = outMin;
-  outMax_ = outMax;
+  gain_p_ = gain_p;
+  gain_i_ = gain_i;
+  gain_d_ = gain_d;
+  out_min_ = out_min;
+  out_max_ = out_max;
 }
 
 void PIDController::reset()

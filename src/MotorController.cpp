@@ -3,8 +3,8 @@
 namespace ras_group8_motor_controller
 {
 
-MotorController::MotorController(ros::NodeHandle &nodeHandle)
-  : nodeHandle_(nodeHandle)
+MotorController::MotorController(ros::NodeHandle &node_handle)
+  : node_handle_(node_handle)
 {
   if (!reload()) {
     ros::requestShutdown();
@@ -12,19 +12,19 @@ MotorController::MotorController(ros::NodeHandle &nodeHandle)
   
   /* Setup the reload service
    */
-  reloadService_ =
-    nodeHandle_.advertiseService("reload", &MotorController::reloadCallback,
+  reload_service_ =
+    node_handle_.advertiseService("reload", &MotorController::reloadCallback,
                                  this);
                                  
-  wheelEncoderCallback_ = &MotorController::wheelEncoderCallback;
+  wheel_encoder_callback_ = &MotorController::wheelEncoderCallback;
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
   /* Setup logger outputs here
     *  Their enpoints are not configurable
    */
-    pidReferencePublisher_ = nodeHandle_.advertise<std_msgs::Float32>("reference", 1);
-    pidInputPublisher_        = nodeHandle_.advertise<std_msgs::Float32>("input", 1);
-    pidOutputPublisher_     = nodeHandle_.advertise<std_msgs::Float32>("output", 1);
+    pid_reference_publisher_ = node_handle_.advertise<std_msgs::Float32>("reference", 1);
+    pid_input_publisher_        = node_handle_.advertise<std_msgs::Float32>("input", 1);
+    pid_output_publisher_     = node_handle_.advertise<std_msgs::Float32>("output", 1);
   ROS_INFO("Compiled with log output.");
 #endif
   
@@ -45,59 +45,59 @@ void MotorController::publishPidState(double reference, double input, double out
   std_msgs::Float32 msg;
   
   msg.data = reference;
-  pidReferencePublisher_.publish(msg);
+  pid_reference_publisher_.publish(msg);
   
   msg.data = input;
-  pidInputPublisher_.publish(msg);
+  pid_input_publisher_.publish(msg);
   
   msg.data = output;
-  pidOutputPublisher_.publish(msg);
+  pid_output_publisher_.publish(msg);
 }
 #endif
 
 void MotorController::wheelEncoderCallbackOneshot(const phidgets::motor_encoder& msg)
 {
   /* Store the current message */
-  std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
+  std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
   
   /* Arm the regular callback */
-  wheelEncoderCallback_ = &MotorController::wheelEncoderCallback;
-  updateSubscriber(wheelEncoderSubscriber_, wheelEncoderTopic_,
-                   wheelEncoderCallback_);
+  wheel_encoder_callback_ = &MotorController::wheelEncoderCallback;
+  updateSubscriber(wheel_encoder_subscriber_, wheel_encoder_topic_,
+                   wheel_encoder_callback_);
 }
 
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
   double velocity;
   double dt;
-  std_msgs::Float32 motorMsg;
+  std_msgs::Float32 motor_msg;
   
   /* Calculate delta time */
-  dt = (msg.header.stamp - encoderMsgPrev_.header.stamp).toSec();
+  dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
   
   /* Calculate wheel velocity */
   /* TODO: Convert to a multiplication instead of a division */
-  velocity = (double)(msg.count - encoderMsgPrev_.count) /
-              encoderTicsPerRevolution_ / dt;
+  velocity = (double)(msg.count - encoder_msg_prev_.count) /
+              encoder_tics_per_revolution_ / dt;
               
   /* Check that the set velocity has not expired */
-  if (velocityTargetExpireTime_ < msg.header.stamp) {
+  if (velocity_target_expire_time_ < msg.header.stamp) {
     ROS_INFO("No new velocity setting for a while. Setting to zero.");
-    velocityTarget_ = 0.0;
+    velocity_target_ = 0.0;
   }
               
   /* Update controller */
-  motorMsg.data =
-    pidController_.update(velocity, velocityTarget_, dt);
+  motor_msg.data =
+    pid_controller_.update(velocity, velocity_target_, dt);
   /* Set new motor value */
-  motorPublisher_.publish(motorMsg);
+  motor_publisher_.publish(motor_msg);
     
   /* Store the current message */
-  std::memcpy(&encoderMsgPrev_, &msg, sizeof(phidgets::motor_encoder));
+  std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
   /* .Publish the internal PID state */
-  publishPidState(velocityTarget_, velocity, motorMsg.data);
+  publishPidState(velocity_target_, velocity, motor_msg.data);
 #endif
 }
 
@@ -107,40 +107,40 @@ void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
   
   ROS_INFO("New velocity: %f", msg.data);
   /* Store the expiration time of the velocity */
-  velocityTargetExpireTime_ = ros::Time::now() + velocityExpireTimeout_;
+  velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
   
-  velocityTarget_ = msg.data;
+  velocity_target_ = msg.data;
 }
 
 template<class M, class T>
-void MotorController::updateSubscriber(ros::Subscriber& sub, const std::string newTopic, void(T::*callback)(M))
+void MotorController::updateSubscriber(ros::Subscriber& sub, const std::string new_topic, void(T::*callback)(M))
 {
   if (NULL != sub) {
     /* Check if the topic has changed */
-    if (sub.getTopic().compare(newTopic) == 0) {
+    if (sub.getTopic().compare(new_topic) == 0) {
       return;
     }
     
     sub.shutdown();
   }
   
-  sub = nodeHandle_.subscribe(newTopic, 1, callback, this);
+  sub = node_handle_.subscribe(new_topic, 1, callback, this);
 }
 
 template<class M>
 void MotorController::updatePublisher(ros::Publisher& pub,
-                                      const std::string newTopic)
+                                      const std::string new_topic)
 {
   if (NULL != pub) {
     /* Check if the topic has changed */
-    if (pub.getTopic().compare(newTopic) == 0) {
+    if (pub.getTopic().compare(new_topic) == 0) {
       return;
     }
 
     pub.shutdown();
   }
 
-  pub = nodeHandle_.advertise<M>(newTopic, 1);
+  pub = node_handle_.advertise<M>(new_topic, 1);
 }
 
 /**
@@ -155,13 +155,13 @@ bool MotorController::reload()
   }
   
   /* Re-subscribe to topics */
-  updateSubscriber(wheelEncoderSubscriber_, wheelEncoderTopic_,
-                   wheelEncoderCallback_);
+  updateSubscriber(wheel_encoder_subscriber_, wheel_encoder_topic_,
+                   wheel_encoder_callback_);
                    
-  updateSubscriber(velocitySubscriber_, velocityTopic_,
+  updateSubscriber(velocity_subscriber_, velocity_topic_,
                    &MotorController::velocityCallback);
 
-  updatePublisher<std_msgs::Float32>(motorPublisher_, motorTopic_);
+  updatePublisher<std_msgs::Float32>(motor_publisher_, motor_topic_);
 }
 
 bool MotorController::reloadCallback(std_srvs::Trigger::Request& request,
@@ -179,59 +179,59 @@ bool MotorController::reloadCallback(std_srvs::Trigger::Request& request,
 
 bool MotorController::readParameters()
 {
-  double gainP;
-  double gainI;
-  double gainD;
-  double outMin;
-  double outMax;
-  double velocityExpireTimeout;
+  double gain_p;
+  double gain_i;
+  double gain_d;
+  double out_min;
+  double out_max;
+  double velocity_expire_timeout;
   
-  if (!nodeHandle_.getParam("motor_topic", motorTopic_))
+  if (!node_handle_.getParam("motor_topic", motor_topic_))
     return false;
-  ROS_INFO("P: motorTopic_ = %s", motorTopic_.c_str());
+  ROS_INFO("P: motor_topic_ = %s", motor_topic_.c_str());
   
-  if (!nodeHandle_.getParam("encoder_topic", wheelEncoderTopic_))
+  if (!node_handle_.getParam("encoder_topic", wheel_encoder_topic_))
     return false;
-  ROS_INFO("P: wheelEncoderTopic_ = %s", wheelEncoderTopic_.c_str());
+  ROS_INFO("P: wheel_encoder_topic_ = %s", wheel_encoder_topic_.c_str());
   
-  if (!nodeHandle_.getParam("velocity_topic", velocityTopic_))
+  if (!node_handle_.getParam("velocity_topic", velocity_topic_))
     return false;
-  ROS_INFO("P: velocityTopic_ = %s", velocityTopic_.c_str());
+  ROS_INFO("P: velocity_topic_ = %s", velocity_topic_.c_str());
   
-  if (!nodeHandle_.getParam("gain/p", gainP))
+  if (!node_handle_.getParam("gain/p", gain_p))
     return false;
-  ROS_INFO("P: gainP = %f", gainP);
+  ROS_INFO("P: gain_p = %f", gain_p);
   
-  if (!nodeHandle_.getParam("gain/i", gainI))
+  if (!node_handle_.getParam("gain/i", gain_i))
     return false;
-  ROS_INFO("P: gainI = %f", gainI);
+  ROS_INFO("P: gain_i = %f", gain_i);
   
-  if (!nodeHandle_.getParam("gain/d", gainD))
+  if (!node_handle_.getParam("gain/d", gain_d))
     return false;
-  ROS_INFO("P: gainD = %f", gainD);
+  ROS_INFO("P: gain_d = %f", gain_d);
   
-  if (!nodeHandle_.getParam("output_min", outMin))
+  if (!node_handle_.getParam("output_min", out_min))
     return false;
-  ROS_INFO("P: outMin = %f", outMin);
+  ROS_INFO("P: out_min = %f", out_min);
   
-  if (!nodeHandle_.getParam("output_max", outMax))
+  if (!node_handle_.getParam("output_max", out_max))
     return false;
-  ROS_INFO("P: outMax = %f", outMax);
+  ROS_INFO("P: out_max = %f", out_max);
   
-  if (!nodeHandle_.getParam("/platform/wheel_encoder_tics_per_rev", encoderTicsPerRevolution_))
+  if (!node_handle_.getParam("/platform/wheel_encoder_tics_per_rev", encoder_tics_per_revolution_))
     return false;
-  ROS_INFO("P: encoderTicsPerRevolution_ = %f", encoderTicsPerRevolution_);
+  ROS_INFO("P: encoder_tics_per_revolution_ = %f", encoder_tics_per_revolution_);
   
-  if (!nodeHandle_.getParam("velocity_timeout", velocityExpireTimeout))
+  if (!node_handle_.getParam("velocity_timeout", velocity_expire_timeout))
     return false;
-  ROS_INFO("P: velocityExpireTimeout = %f", velocityExpireTimeout);
+  ROS_INFO("P: velocity_expire_timeout = %f", velocity_expire_timeout);
   
   /* Update the PID parameters */
-  pidController_.updateParams(gainP, gainI, gainD, outMin, outMax);
-  pidController_.reset();
+  pid_controller_.updateParams(gain_p, gain_i, gain_d, out_min, out_max);
+  pid_controller_.reset();
   
   /* Wrap the expire timeout in a duration */
-  velocityExpireTimeout_ = ros::Duration(velocityExpireTimeout);
+  velocity_expire_timeout_ = ros::Duration(velocity_expire_timeout);
   
   return true;
 }
