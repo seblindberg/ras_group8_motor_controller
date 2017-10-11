@@ -31,6 +31,7 @@ private:
   void wheelEncoderCallbackOneshot(const phidgets::motor_encoder& msg);
   void wheelEncoderCallback(const phidgets::motor_encoder& msg);
   
+  /* Accept the linear velocity as a float in m/s */
   void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
   
   bool reloadCallback(std_srvs::Trigger::Request& request,
@@ -79,6 +80,7 @@ private:
   std::string velocity_topic_;
   std::string motor_topic_;
   
+  double wheel_rev_per_meter_;
   double encoder_tics_per_revolution_;
   ros::Duration velocity_expire_timeout_;
   bool reverse_direction_;

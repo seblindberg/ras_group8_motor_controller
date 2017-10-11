@@ -1,4 +1,5 @@
 #include <ras_group8_motor_controller/MotorController.hpp>
+#include <math.h>
 
 namespace ras_group8_motor_controller
 {
@@ -15,7 +16,7 @@ MotorController::MotorController(ros::NodeHandle &node_handle)
   reload_service_ =
     node_handle_.advertiseService("reload", &MotorController::reloadCallback,
                                  this);
-                                 
+  
   wheel_encoder_callback_ = &MotorController::wheelEncoderCallback;
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
@@ -78,7 +79,7 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   /* Calculate wheel velocity */
   /* TODO: Convert to a multiplication instead of a division */
   velocity = (double)(msg.count - encoder_msg_prev_.count) /
-              encoder_tics_per_revolution_ / dt;
+    encoder_tics_per_revolution_ / dt;
               
   /* Check that the set velocity has not expired */
   if (velocity_target_expire_time_ < msg.header.stamp) {
@@ -96,7 +97,7 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
-  /* .Publish the internal PID state */
+  /* Publish the internal PID state */
   publishPidState(velocity_target_, velocity, motor_msg.data);
 #endif
 }
@@ -105,11 +106,12 @@ void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
 {
   std_msgs::Float32 msg = *ptr;
   
-  ROS_INFO("New velocity: %f", msg.data);
+  ROS_INFO("New velocity: %f [m/s]", msg.data);
   /* Store the expiration time of the velocity */
   velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
   
-  velocity_target_ = msg.data;
+  /* Convert from linear velocity (m/s) to wheel velocity (rev/s) */
+  velocity_target_ = msg.data * wheel_rev_per_meter_;
   
   if (reverse_direction_) {
     velocity_target_ = -velocity_target_;
@@ -189,6 +191,7 @@ bool MotorController::readParameters()
   double out_min;
   double out_max;
   double velocity_expire_timeout;
+  double wheel_radius;
   
   if (!node_handle_.getParam("motor_topic", motor_topic_))
     return false;
@@ -226,6 +229,10 @@ bool MotorController::readParameters()
     return false;
   ROS_INFO("P: encoder_tics_per_revolution_ = %f", encoder_tics_per_revolution_);
   
+  if (!node_handle_.getParam("/platform/wheel_radius", wheel_radius))
+    return false;
+  ROS_INFO("P: wheel_radius = %f", wheel_radius);
+  
   if (!node_handle_.getParam("velocity_timeout", velocity_expire_timeout))
     return false;
   ROS_INFO("P: velocity_expire_timeout = %f", velocity_expire_timeout);
@@ -237,6 +244,9 @@ bool MotorController::readParameters()
   /* Update the PID parameters */
   pid_controller_.updateParams(gain_p, gain_i, gain_d, out_min, out_max);
   pid_controller_.reset();
+  
+  /* Calculate wheel_rev_per_meter_ */
+  wheel_rev_per_meter_ = 1.0 / (wheel_radius * 2 * M_PI);
   
   /* Wrap the expire timeout in a duration */
   velocity_expire_timeout_ = ros::Duration(velocity_expire_timeout);
