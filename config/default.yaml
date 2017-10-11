@@ -8,3 +8,4 @@ gain:
 output_min: -250.0
 output_max: 250.0
 velocity_timeout: 2.0
+reverse_direction: false;

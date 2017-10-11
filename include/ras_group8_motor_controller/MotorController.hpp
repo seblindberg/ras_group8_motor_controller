@@ -81,6 +81,7 @@ private:
   
   double encoder_tics_per_revolution_;
   ros::Duration velocity_expire_timeout_;
+  bool reverse_direction_;
   
   /* Variables */
   PIDController pid_controller_;

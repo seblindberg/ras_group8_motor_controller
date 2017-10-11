@@ -110,6 +110,10 @@ void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
   velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
   
   velocity_target_ = msg.data;
+  
+  if (reverse_direction_) {
+    velocity_target_ = -velocity_target_;
+  }
 }
 
 template<class M, class T>
@@ -225,6 +229,10 @@ bool MotorController::readParameters()
   if (!node_handle_.getParam("velocity_timeout", velocity_expire_timeout))
     return false;
   ROS_INFO("P: velocity_expire_timeout = %f", velocity_expire_timeout);
+  
+  if (!node_handle_.getParam("reverse_direction", reverse_direction_))
+    return false;
+  ROS_INFO("P: reverse_direction_ = %u", reverse_direction_);
   
   /* Update the PID parameters */
   pid_controller_.updateParams(gain_p, gain_i, gain_d, out_min, out_max);
