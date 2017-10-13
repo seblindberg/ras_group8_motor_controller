@@ -1,6 +1,6 @@
 motor_topic: /motorcontrol/cmd_vel
 encoder_topic: /motorcontrol/encoder
-velocity_topic: volecity
+velocity_topic: velocity
 gain:
   p: 20.0
   i: 80.0
@@ -8,4 +8,4 @@ gain:
 output_min: -250.0
 output_max: 250.0
 velocity_timeout: 2.0
-reverse_direction: false;
+reverse_direction: false

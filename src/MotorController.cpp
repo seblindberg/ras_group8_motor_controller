@@ -74,17 +74,17 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
   
   /* If we don't seem to have missed any messages */
-  if (0 > dt && dt < 0.2) { /* TODO: Do not hard-code this value */
+  //if (0 > dt && dt < 0.2) { /* TODO: Do not hard-code this value */
     /* Calculate wheel velocity */
     /* TODO: Convert to a multiplication instead of a division */
     velocity = (double)(msg.count - encoder_msg_prev_.count) /
       encoder_tics_per_revolution_ / dt;
                 
     /* Check that the set velocity has not expired */
-    if (velocity_target_expire_time_ < msg.header.stamp) {
-      ROS_INFO("No new velocity setting for a while. Setting to zero.");
-      velocity_target_ = 0.0;
-    }
+    // if (velocity_target_expire_time_ < msg.header.stamp) {
+    //   ROS_INFO("No new velocity setting for a while. Setting to zero.");
+    //   velocity_target_ = 0.0;
+    // }
                 
     /* Update controller */
     motor_msg.data =
@@ -97,7 +97,7 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
     /* Publish the internal PID state */
     publishPidState(velocity_target_, velocity, motor_msg.data);
 #endif
-  }
+  //}
     
   /* Store the current message */
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
