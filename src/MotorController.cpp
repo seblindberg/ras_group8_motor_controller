@@ -16,9 +16,7 @@ MotorController::MotorController(ros::NodeHandle &node_handle)
   reload_service_ =
     node_handle_.advertiseService("reload", &MotorController::reloadCallback,
                                  this);
-  
-  wheel_encoder_callback_ = &MotorController::wheelEncoderCallback;
-  
+    
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
   /* Setup logger outputs here
     *  Their enpoints are not configurable
@@ -165,7 +163,7 @@ bool MotorController::reload()
   
   /* Re-subscribe to topics */
   updateSubscriber(wheel_encoder_subscriber_, wheel_encoder_topic_,
-                   wheel_encoder_callback_);
+                   &MotorController::wheelEncoderCallback);
                    
   updateSubscriber(velocity_subscriber_, velocity_topic_,
                    &MotorController::velocityCallback);
