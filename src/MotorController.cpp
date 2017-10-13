@@ -62,9 +62,8 @@ void MotorController::wheelEncoderCallbackOneshot(const phidgets::motor_encoder&
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
   
   /* Arm the regular callback */
-  wheel_encoder_callback_ = &MotorController::wheelEncoderCallback;
   updateSubscriber(wheel_encoder_subscriber_, wheel_encoder_topic_,
-                   wheel_encoder_callback_);
+                   &MotorController::wheelEncoderCallback);
 }
 
 void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
@@ -76,30 +75,34 @@ void MotorController::wheelEncoderCallback(const phidgets::motor_encoder& msg)
   /* Calculate delta time */
   dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
   
-  /* Calculate wheel velocity */
-  /* TODO: Convert to a multiplication instead of a division */
-  velocity = (double)(msg.count - encoder_msg_prev_.count) /
-    encoder_tics_per_revolution_ / dt;
-              
-  /* Check that the set velocity has not expired */
-  if (velocity_target_expire_time_ < msg.header.stamp) {
-    ROS_INFO("No new velocity setting for a while. Setting to zero.");
-    velocity_target_ = 0.0;
+  /* If we don't seem to have missed any messages */
+  if (0 > dt && dt < 0.2) { /* TODO: Do not hard-code this value */
+    /* Calculate wheel velocity */
+    /* TODO: Convert to a multiplication instead of a division */
+    velocity = (double)(msg.count - encoder_msg_prev_.count) /
+      encoder_tics_per_revolution_ / dt;
+                
+    /* Check that the set velocity has not expired */
+    if (velocity_target_expire_time_ < msg.header.stamp) {
+      ROS_INFO("No new velocity setting for a while. Setting to zero.");
+      velocity_target_ = 0.0;
+    }
+                
+    /* Update controller */
+    motor_msg.data =
+      pid_controller_.update(velocity, velocity_target_, dt);
+    
+    /* Set new motor value */
+    motor_publisher_.publish(motor_msg);
+    
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+    /* Publish the internal PID state */
+    publishPidState(velocity_target_, velocity, motor_msg.data);
+#endif
   }
-              
-  /* Update controller */
-  motor_msg.data =
-    pid_controller_.update(velocity, velocity_target_, dt);
-  /* Set new motor value */
-  motor_publisher_.publish(motor_msg);
     
   /* Store the current message */
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
-  
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
-  /* Publish the internal PID state */
-  publishPidState(velocity_target_, velocity, motor_msg.data);
-#endif
 }
 
 void MotorController::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)

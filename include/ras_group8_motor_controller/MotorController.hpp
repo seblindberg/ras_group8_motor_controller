@@ -89,8 +89,6 @@ private:
   PIDController pid_controller_;
   double velocity_target_;
   ros::Time velocity_target_expire_time_;
-  /* Store a pointer to the current encoder callback in use */
-  void (MotorController::*wheel_encoder_callback_)(const phidgets::motor_encoder&);
   phidgets::motor_encoder encoder_msg_prev_;
 };
 
