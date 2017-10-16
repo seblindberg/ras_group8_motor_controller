@@ -1,4 +1,8 @@
 #include <ras_group8_motor_controller/MotorController.hpp>
+
+#include <ras_group8_motor_controller/PIDController.hpp>
+#include <ras_group8_motor_controller/StaticController.hpp>
+
 #include <math.h>
 
 namespace ras_group8_motor_controller
@@ -53,6 +57,16 @@ MotorController<Controller>::~MotorController()
   wheel_encoder_subscriber_.shutdown();
   velocity_subscriber_.shutdown();
   motor_publisher_.shutdown();
+}
+
+template<class Controller>
+void MotorController<Controller>::setTargetVelocity(double velocity)
+{
+  if (reverse_direction_) {
+    velocity_target_ = -velocity;
+  } else {
+    velocity_target_ = velocity;
+  }
 }
 
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
@@ -113,6 +127,8 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     
   /* Store the current message */
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
+  
+  velocity_prev_ = velocity;
 }
 
 template<class Controller>
@@ -125,11 +141,7 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
   velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
   
   /* Convert from linear velocity (m/s) to wheel velocity (rev/s) */
-  velocity_target_ = msg.data * wheel_rev_per_meter_;
-  
-  if (reverse_direction_) {
-    velocity_target_ = -velocity_target_;
-  }
+  setTargetVelocity(msg.data * wheel_rev_per_meter_);
 }
 
 template<class Controller>
@@ -208,5 +220,6 @@ MotorController<Controller>
 /* Force te compiler to compile the PIDController version of this class.
  */
 template class MotorController<PIDController>;
+template class MotorController<StaticController>;
 
 } /* namespace */

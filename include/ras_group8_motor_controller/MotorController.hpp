@@ -5,7 +5,6 @@
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Float32.h>
 #include <phidgets/motor_encoder.h>
-#include <ras_group8_motor_controller/PIDController.hpp>
 
 #define RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID 1
 
@@ -27,6 +26,13 @@ public:
                   bool reverse_direction);
   
   virtual ~MotorController();
+  
+  void setTargetVelocity(double velocity);
+  
+  double velocity()
+  {
+    return velocity_prev_;
+  }
   
   static MotorController<Controller> load(ros::NodeHandle &n, Controller& controller);
 
@@ -72,6 +78,7 @@ private:
   /* Variables */
   Controller& controller_;
   double velocity_target_;
+  double velocity_prev_;
   ros::Time velocity_target_expire_time_;
   phidgets::motor_encoder encoder_msg_prev_;
 };

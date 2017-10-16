@@ -2,13 +2,24 @@
 	
 	<!-- Launch the Platform Node -->
 	<node name="platform"
-				 pkg="ras_group8_platform"
-				type="ras_group8_platform">
+         pkg="ras_group8_platform"
+        type="ras_group8_platform">
 		<rosparam command="load" file="$(find ras_group8_platform)/config/default.yaml" />
+	</node>
+	
+	<!-- Launch a motor controller -->
+	<node name="phidgets"
+	       pkg="phidgets"
+	      type="motor"
+	      args="_serial:=473021"
+	   respawn="true">
 	</node>
 
 	<!-- Launch one Motor Controller Node -->
-	<node pkg="ras_group8_motor_controller" type="ras_group8_motor_controller" name="ras_group8_motor_controller" output="screen">
+	<node name="ras_group8_motor_controller"
+  	     pkg="ras_group8_motor_controller"
+  	    type="ras_group8_motor_controller"
+  	  output="screen">
 		<rosparam command="load" file="$(find ras_group8_motor_controller)/config/default.yaml" />
 	</node>
 
