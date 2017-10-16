@@ -6,6 +6,14 @@
         type="ras_group8_platform">
     <rosparam command="load" file="$(find ras_group8_platform)/config/default.yaml" />
   </node>
+  
+  <!-- Launch a motor controller -->
+  <node name="phidgets"
+         pkg="phidgets"
+        type="motor"
+        args="_serial:=473021"
+     respawn="true">
+  </node>
 
   <!-- Launch one Motor Controller Node -->
   <node name="characterizer"

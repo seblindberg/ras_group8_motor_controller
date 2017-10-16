@@ -4,6 +4,9 @@
 #include <std_msgs/Int32.h>
 #include <rosbag/bag.h>
 
+#define MOTOR_MIN -50
+#define MOTOR_MAX 50
+
 using namespace ras_group8_motor_controller;
 
 int main(int argc, char **argv)
@@ -43,17 +46,18 @@ int main(int argc, char **argv)
     dt = (now - time_prev).toSec();
     time_prev = now;
     
-    ramp = target.data + ramp_dir * dt * 1.0;
+    ramp += ramp_dir * dt * 5.0;
     
-    if (ramp >= 250) {
-      ramp = 250;
+    if (ramp >= MOTOR_MAX) {
+      ramp = MOTOR_MAX;
       ramp_dir = -1;
-    } else if (ramp <= -250) {
-      ramp = 250;
+    } else if (ramp <= MOTOR_MIN) {
+      ramp = MOTOR_MIN;
       ramp_dir = 1;
     }
     
     motor_controller.setTargetVelocity(ramp);
+    ROS_INFO("Set value = %f", ramp);
     
     loop_rate.sleep();
   }

@@ -54,9 +54,6 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
 template<class Controller>
 MotorController<Controller>::~MotorController()
 {
-  wheel_encoder_subscriber_.shutdown();
-  velocity_subscriber_.shutdown();
-  motor_publisher_.shutdown();
 }
 
 template<class Controller>
