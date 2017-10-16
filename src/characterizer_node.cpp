@@ -1,13 +1,22 @@
 #include <ros/ros.h>
+#include <signal.h>
 #include <ras_group8_motor_controller/MotorController.hpp>
 #include <ras_group8_motor_controller/StaticController.hpp>
-#include <std_msgs/Int32.h>
-#include <rosbag/bag.h>
 
 #define MOTOR_MIN -50
 #define MOTOR_MAX 50
 
 using namespace ras_group8_motor_controller;
+
+static MotorController<StaticController> *controller;
+
+void quit(int sig)
+{
+  controller->shutdown();
+  ROS_INFO("Killing motor driver");
+  
+  ros::shutdown();
+}
 
 int main(int argc, char **argv)
 {
@@ -15,33 +24,26 @@ int main(int argc, char **argv)
   ros::NodeHandle node_handle("~");
   ros::Rate loop_rate(10.0);
   
-  rosbag::Bag bag;
-  bag.open("motor_ramp.bag", rosbag::bagmode::Write);
-  
-  StaticController controller;
+  StaticController static_controller;
   
   MotorController<StaticController> motor_controller =
-    MotorController<StaticController>::load(node_handle, controller);
-    
+    MotorController<StaticController>::load(node_handle, static_controller);
+  
   ros::Time time_prev = ros::Time::now();
   ros::Time now;
   double dt;
+  
   double ramp = 0;
   int ramp_dir = 1;
   
-  std_msgs::Int32 velocity;
-  std_msgs::Int32 target;
+  /* Trap signal exit. */
+  controller = &motor_controller;
+  signal(SIGINT, quit);
   
   while (node_handle.ok()) {
     ros::spinOnce();
     
     now = ros::Time::now();
-    
-    velocity.data = motor_controller.velocity();
-    target.data   = ramp;
-    
-    bag.write("target", now, target);
-    bag.write("velocity", now, velocity);
     
     dt = (now - time_prev).toSec();
     time_prev = now;
@@ -61,8 +63,6 @@ int main(int argc, char **argv)
     
     loop_rate.sleep();
   }
-  
-  bag.close();
 
   return 0;
 }

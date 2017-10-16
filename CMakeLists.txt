@@ -9,7 +9,8 @@ find_package(catkin REQUIRED
 	geometry_msgs
 	std_msgs
 	std_srvs
-	rosbag
+	phidgets
+	#rosbag
 )
 
 catkin_package(
@@ -21,7 +22,8 @@ catkin_package(
 		geometry_msgs
 		std_msgs
 		std_srvs
-		rosbag
+		phidgets
+		#rosbag
 	
 # DEPENDS
 )

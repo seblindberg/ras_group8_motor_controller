@@ -1,6 +1,6 @@
 <package>
  <name>ras_group8_motor_controller</name>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <description>
     Closed loop motor controller.
   </description>
@@ -16,12 +16,14 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>rosbag</build_depend>
+  <build_depend>phidgets</build_depend>
+  <!--<build_depend>rosbag</build_depend>-->
 
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>rosbag</run_depend>
+  <run_depend>phidgets</run_depend>
+  <!--<run_depend>rosbag</run_depend>-->
   <run_depend>ras_group8_platform</run_depend>
 </package>

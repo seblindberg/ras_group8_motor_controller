@@ -34,6 +34,8 @@ public:
     return velocity_prev_;
   }
   
+  void shutdown();
+  
   static MotorController<Controller> load(ros::NodeHandle &n, Controller& controller);
 
 private:

@@ -96,6 +96,8 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
   /* Calculate delta time */
   dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
   
+  ROS_INFO("dt = %f", dt);
+  
   /* If we don't seem to have missed any messages */
   //if (0 > dt && dt < 0.2) { /* TODO: Do not hard-code this value */
     /* Calculate wheel velocity */
@@ -141,16 +143,22 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
   setTargetVelocity(msg.data * wheel_rev_per_meter_);
 }
 
+/* Shutdown the motor controller by setting the velocity to 0.
+ */
+template<class Controller>
+void MotorController<Controller>::shutdown()
+{
+  std_msgs::Float32 motor_msg;
+  motor_msg.data = 0.0;
+  
+  motor_publisher_.publish(motor_msg);
+}
+
 template<class Controller>
 MotorController<Controller>
   MotorController<Controller>::load(ros::NodeHandle &n,
                                     Controller& controller)
 {
-  double gain_p;
-  double gain_i;
-  double gain_d;
-  double out_min;
-  double out_max;
   double velocity_expire_timeout;
   double wheel_radius;
   
@@ -190,17 +198,10 @@ MotorController<Controller>
   if (!n.getParam("reverse_direction", reverse_direction))
     exit(-1);
   ROS_INFO("P: reverse_direction_ = %u", reverse_direction);
-  
-  /* Update the PID parameters */
-  //pid_controller_.updateParams(gain_p, gain_i, gain_d, out_min, out_max);
-  //pid_controller_.reset();
-  
+    
   /* Calculate wheel_rev_per_meter_ */
   wheel_rev_per_meter = 1.0 / (wheel_radius * 2 * M_PI);
-  
-  /* Wrap the expire timeout in a duration */
-  //velocity_expire_timeout_ = ros::Duration(velocity_expire_timeout);
-  
+    
   MotorController<Controller> object(n,
                               controller,
                               wheel_encoder_topic,
