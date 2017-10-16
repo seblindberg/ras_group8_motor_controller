@@ -32,17 +32,21 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
   velocity_subscriber_ =
     node_handle_.subscribe(velocity_topic, 1,
                            &MotorController::velocityCallback, this);
+                           
   motor_publisher_ = node_handle_.advertise<std_msgs::Float32>(motor_topic, 1);
     
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
   /* Setup logger outputs here
    * Their enpoints are not configurable
    */
-    pid_reference_publisher_ = node_handle_.advertise<std_msgs::Float32>("reference", 1);
+    pid_reference_publisher_ =
+      node_handle_.advertise<std_msgs::Float32>("reference", 1);
     
-    pid_input_publisher_        = node_handle_.advertise<std_msgs::Float32>("input", 1);
+    pid_input_publisher_ =
+      node_handle_.advertise<std_msgs::Float32>("input", 1);
     
-    pid_output_publisher_     = node_handle_.advertise<std_msgs::Float32>("output", 1);
+    pid_output_publisher_ =
+      node_handle_.advertise<std_msgs::Float32>("output", 1);
     
   ROS_INFO("Compiled with log output.");
 #endif
@@ -95,11 +99,9 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
   
   /* Calculate delta time */
   dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
-  
-  ROS_INFO("dt = %f", dt);
-  
+    
   /* If we don't seem to have missed any messages */
-  //if (0 > dt && dt < 0.2) { /* TODO: Do not hard-code this value */
+  if (0 < dt && dt < 0.2) { /* TODO: Do not hard-code this value */
     /* Calculate wheel velocity */
     /* TODO: Convert to a multiplication instead of a division */
     velocity = (double)(msg.count - encoder_msg_prev_.count) /
@@ -110,10 +112,14 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     //   ROS_INFO("No new velocity setting for a while. Setting to zero.");
     //   velocity_target_ = 0.0;
     // }
-                
-    /* Update controller */
-    motor_msg.data =
-      controller_.update(velocity, velocity_target_, dt);
+  
+    if (velocity_target_ == 0.0) {
+      motor_msg.data = 0.0;
+    } else {
+      /* Update controller */
+      motor_msg.data =
+        controller_.update(velocity, velocity_target_, dt);
+    }
     
     /* Set new motor value */
     motor_publisher_.publish(motor_msg);
@@ -122,7 +128,7 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     /* Publish the internal PID state */
     publishPidState(velocity_target_, velocity, motor_msg.data);
 #endif
-  //}
+  }
     
   /* Store the current message */
   std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
@@ -135,7 +141,7 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
 {
   std_msgs::Float32 msg = *ptr;
   
-  ROS_INFO("New velocity: %f [m/s]", msg.data);
+  //ROS_INFO("New velocity: %f [m/s]", msg.data);
   /* Store the expiration time of the velocity */
   velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
   

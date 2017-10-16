@@ -3,9 +3,9 @@ encoder_topic: /motorcontrol/encoder
 velocity_topic: velocity
 gain:
   p: 20.0
-  i: 80.0
+  i: 60.0
   d: -0.5
-output_min: -250.0
-output_max: 250.0
+output_min: -20.0
+output_max: 30.0
 velocity_timeout: 2.0
 reverse_direction: false
