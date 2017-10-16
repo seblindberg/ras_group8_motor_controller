@@ -1,4 +1,11 @@
 <launch>
+	
+	<!-- Launch the Platform Node -->
+	<node name="platform"
+				 pkg="ras_group8_platform"
+				type="ras_group8_platform">
+		<rosparam command="load" file="$(find ras_group8_platform)/config/default.yaml" />
+	</node>
 
 	<!-- Launch one Motor Controller Node -->
 	<node pkg="ras_group8_motor_controller" type="ras_group8_motor_controller" name="ras_group8_motor_controller" output="screen">

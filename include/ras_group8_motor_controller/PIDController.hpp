@@ -1,6 +1,6 @@
 #pragma once
 
-//#include <ros/ros.h>
+#include <ros/ros.h>
 
 namespace ras_group8_motor_controller
 {
@@ -18,15 +18,14 @@ public:
   
   double update(double value, double target, double dt);
   
-  void updateParams(double gain_p, double gain_i, double gain_d, double out_min,
-                    double out_max);
-  
   void reset();
   
   double getIntegral()
   {
     return integral_;
   }
+  
+  static PIDController load(ros::NodeHandle& n);
   
 private:
   double gain_p_;
