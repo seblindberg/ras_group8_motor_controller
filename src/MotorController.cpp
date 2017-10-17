@@ -9,6 +9,8 @@
 namespace ras_group8_motor_controller
 {
 
+/* Constructor
+ */
 template<class Controller>
 MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
                                  Controller& controller,
@@ -60,11 +62,15 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
   ROS_INFO("Successfully launched node.");
 }
 
+/* Destructor
+ */
 template<class Controller>
 MotorController<Controller>::~MotorController()
 {
 }
 
+/* Set Target Velocity
+ */
 template<class Controller>
 void MotorController<Controller>::setTargetVelocity(double velocity)
 {
@@ -92,12 +98,15 @@ void MotorController<Controller>::publishPidState(double reference, double input
 }
 #endif
 
+/* Wheel Encoder Callback
+ */
 template<class Controller>
 void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_encoder& msg)
 {
   double velocity;
   double dt;
   std_msgs::Float32 motor_msg;
+  geometry_msgs::TwistStamped twist_msg;
   
   /* Calculate delta time */
   dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
@@ -136,8 +145,6 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     motor_publisher_.publish(motor_msg);
     
     /* Publish twist */
-    geometry_msgs::TwistStamped twist_msg;
-    
     twist_msg.header.stamp = msg.header.stamp;
     twist_msg.twist.linear.x = velocity;
     
@@ -155,6 +162,8 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
   velocity_prev_ = velocity;
 }
 
+/* Veclocity Callback
+ */
 template<class Controller>
 void MotorController<Controller>::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
 {
@@ -167,7 +176,8 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
   //setTargetVelocity(msg.data * wheel_rev_per_meter_);
 }
 
-/* Shutdown the motor controller by setting the velocity to 0.
+/* Shutdown
+ * Shutdown the motor controller by setting the velocity to 0.
  */
 template<class Controller>
 void MotorController<Controller>::shutdown()
@@ -179,6 +189,8 @@ void MotorController<Controller>::shutdown()
   motor_publisher_.publish(motor_msg);
 }
 
+/* Load
+ */
 template<class Controller>
 MotorController<Controller>
   MotorController<Controller>::load(ros::NodeHandle &n,
