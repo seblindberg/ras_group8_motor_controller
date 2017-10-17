@@ -190,7 +190,7 @@ MotorController<Controller>
     exit(-1);
   ROS_INFO("P: velocity_topic_ = %s", velocity_topic.c_str());
   
-  if (!n.getParam("/platform/wheel_encoder_tics_per_rev", encoder_tics_per_revolution))
+  if (!n.getParam("wheel_encoder_tics_per_rev", encoder_tics_per_revolution))
     exit(-1);
   ROS_INFO("P: encoder_tics_per_revolution_ = %f", encoder_tics_per_revolution);
   
