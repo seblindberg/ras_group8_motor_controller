@@ -1,5 +1,4 @@
 #include <ros/ros.h>
-#include <signal.h>
 #include <ras_group8_motor_controller/MotorController.hpp>
 #include <ras_group8_motor_controller/StaticController.hpp>
 
@@ -7,16 +6,6 @@
 #define MOTOR_MAX 50
 
 using namespace ras_group8_motor_controller;
-
-static MotorController<StaticController> *controller;
-
-void quit(int sig)
-{
-  controller->shutdown();
-  ROS_INFO("Killing motor driver");
-  
-  ros::shutdown();
-}
 
 int main(int argc, char **argv)
 {
@@ -35,11 +24,7 @@ int main(int argc, char **argv)
   
   double ramp = 0;
   int ramp_dir = 1;
-  
-  /* Trap signal exit. */
-  controller = &motor_controller;
-  signal(SIGINT, quit);
-  
+    
   while (node_handle.ok()) {
     ros::spinOnce();
     
@@ -63,6 +48,8 @@ int main(int argc, char **argv)
     
     loop_rate.sleep();
   }
+  
+  motor_controller.shutdown();
 
   return 0;
 }

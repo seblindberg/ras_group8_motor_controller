@@ -1,17 +1,8 @@
 #include <ros/ros.h>
 #include <ras_group8_motor_controller/MotorController.hpp>
 #include <ras_group8_motor_controller/PIDController.hpp>
-#include <signal.h>
 
 using namespace ras_group8_motor_controller;
-
-static MotorController<PIDController> *controller;
- 
-void quit(int sig)
-{
-  controller->shutdown();
-  ros::shutdown();
-}
  
 int main(int argc, char **argv)
 {
@@ -32,15 +23,13 @@ int main(int argc, char **argv)
      with values stored in the parameter server. */
   MotorController<PIDController> motor_controller =
     MotorController<PIDController>::load(node_handle, pid_controller);
-    
-  /* Trap signal exit. */
-  controller = &motor_controller;
-  signal(SIGINT, quit);
   
   while (node_handle.ok()) {
     ros::spinOnce();
     loop_rate.sleep();
   }
+  
+  motor_controller.shutdown();
   
   return 0;
 }

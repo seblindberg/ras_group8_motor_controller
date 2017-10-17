@@ -35,7 +35,7 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
                            
   motor_publisher_ = node_handle_.advertise<std_msgs::Float32>(motor_topic, 1);
     
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Setup logger outputs here
    * Their enpoints are not configurable
    */
@@ -70,7 +70,7 @@ void MotorController<Controller>::setTargetVelocity(double velocity)
   }
 }
 
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Optional method that publishes the pid controller state to the three fixed topics reference,
    * input and output.
    */
@@ -124,7 +124,7 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     /* Set new motor value */
     motor_publisher_.publish(motor_msg);
     
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
     /* Publish the internal PID state */
     publishPidState(velocity_target_, velocity, motor_msg.data);
 #endif
@@ -157,6 +157,7 @@ void MotorController<Controller>::shutdown()
   std_msgs::Float32 motor_msg;
   motor_msg.data = 0.0;
   
+  /* Set 0 velocity */
   motor_publisher_.publish(motor_msg);
 }
 

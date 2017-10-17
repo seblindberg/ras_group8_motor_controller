@@ -6,7 +6,7 @@
 #include <std_msgs/Float32.h>
 #include <phidgets/motor_encoder.h>
 
-#define RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID 1
+#define RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE 1
 
 namespace ras_group8_motor_controller
 {
@@ -44,7 +44,7 @@ private:
   /* Accept the linear velocity as a float in m/s */
   void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
   
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Optional method that publishes the pid controller state to the three fixed
    * topics reference, input and output.
    */
@@ -64,7 +64,7 @@ private:
    */
   ros::Publisher motor_publisher_;
   
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_PID
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   ros::Publisher pid_reference_publisher_;
   ros::Publisher pid_input_publisher_;
   ros::Publisher pid_output_publisher_;
