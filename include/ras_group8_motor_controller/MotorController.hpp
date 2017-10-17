@@ -20,6 +20,7 @@ public:
                   const std::string& wheel_encoder_topic,
                   const std::string& velocity_topic,
                   const std::string& motor_topic,
+                  const std::string& twist_topic,
                   double wheel_rev_per_meter,
                   double encoder_tics_per_revolution,
                   double velocity_expire_timeout,
@@ -63,6 +64,7 @@ private:
   /* Publishers
    */
   ros::Publisher motor_publisher_;
+  ros::Publisher twist_publisher_;
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   ros::Publisher pid_reference_publisher_;
@@ -72,10 +74,9 @@ private:
     
   /* Parameters
    */
-  double wheel_rev_per_meter_;
-  double encoder_tics_per_revolution_;
-  ros::Duration velocity_expire_timeout_;
-  bool reverse_direction_;
+  const ros::Duration velocity_expire_timeout_;
+  const bool reverse_direction_;
+  const double meters_per_tics_;
   
   /* Variables */
   Controller& controller_;

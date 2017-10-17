@@ -3,6 +3,7 @@
 #include <ras_group8_motor_controller/PIDController.hpp>
 #include <ras_group8_motor_controller/StaticController.hpp>
 
+#include <geometry_msgs/TwistStamped.h>
 #include <math.h>
 
 namespace ras_group8_motor_controller
@@ -14,16 +15,16 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
                                  const std::string& wheel_encoder_topic,
                                  const std::string& velocity_topic,
                                  const std::string& motor_topic,
-                                 double wheel_rev_per_meter,
-                                 double encoder_tics_per_revolution,
+                                 const std::string& twist_topic,
+                                 double rev_per_meter,
+                                 double tics_per_rev,
                                  double velocity_expire_timeout,
                                  bool reverse_direction)
   : node_handle_(node_handle),
     controller_(controller),
-    wheel_rev_per_meter_(wheel_rev_per_meter),
-    encoder_tics_per_revolution_(encoder_tics_per_revolution),
     velocity_expire_timeout_(velocity_expire_timeout),
-    reverse_direction_(reverse_direction)
+    reverse_direction_(reverse_direction),
+    meters_per_tics_(1.0 / (rev_per_meter * tics_per_rev))
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -33,7 +34,11 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     node_handle_.subscribe(velocity_topic, 1,
                            &MotorController::velocityCallback, this);
                            
-  motor_publisher_ = node_handle_.advertise<std_msgs::Float32>(motor_topic, 1);
+  motor_publisher_ =
+    node_handle_.advertise<std_msgs::Float32>(motor_topic, 1);
+  
+  twist_publisher_ =
+    node_handle_.advertise<geometry_msgs::TwistStamped>(twist_topic, 1);
     
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Setup logger outputs here
@@ -51,7 +56,7 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
   ROS_INFO("Compiled with log output.");
 #endif
   
-  
+  ROS_INFO("meters_per_tics_ =  %f", meters_per_tics_);
   ROS_INFO("Successfully launched node.");
 }
 
@@ -63,11 +68,8 @@ MotorController<Controller>::~MotorController()
 template<class Controller>
 void MotorController<Controller>::setTargetVelocity(double velocity)
 {
-  if (reverse_direction_) {
-    velocity_target_ = -velocity;
-  } else {
-    velocity_target_ = velocity;
-  }
+  velocity_target_ = velocity;
+  velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
 }
 
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
@@ -105,24 +107,41 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     /* Calculate wheel velocity */
     /* TODO: Convert to a multiplication instead of a division */
     velocity = (double)(msg.count - encoder_msg_prev_.count) /
-      encoder_tics_per_revolution_ / dt;
+                 dt * meters_per_tics_;
                 
     /* Check that the set velocity has not expired */
-    // if (velocity_target_expire_time_ < msg.header.stamp) {
-    //   ROS_INFO("No new velocity setting for a while. Setting to zero.");
-    //   velocity_target_ = 0.0;
-    // }
+    if (velocity_target_expire_time_ < msg.header.stamp) {
+      ROS_INFO("No new velocity setting for a while. Setting to zero.");
+      velocity_target_ = 0.0;
+    }
   
     if (velocity_target_ == 0.0) {
       motor_msg.data = 0.0;
     } else {
       /* Update controller */
-      motor_msg.data =
-        controller_.update(velocity, velocity_target_, dt);
+      if (reverse_direction_) {
+        motor_msg.data =
+          controller_.update(velocity, -velocity_target_, dt);
+      } else {
+        motor_msg.data =
+          controller_.update(velocity,  velocity_target_, dt);
+      }
+    }
+    
+    if (reverse_direction_) {
+      velocity = -velocity;
     }
     
     /* Set new motor value */
     motor_publisher_.publish(motor_msg);
+    
+    /* Publish twist */
+    geometry_msgs::TwistStamped twist_msg;
+    
+    twist_msg.header.stamp = msg.header.stamp;
+    twist_msg.twist.linear.x = velocity;
+    
+    twist_publisher_.publish(twist_msg);
     
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
     /* Publish the internal PID state */
@@ -143,10 +162,9 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
   
   //ROS_INFO("New velocity: %f [m/s]", msg.data);
   /* Store the expiration time of the velocity */
-  velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
-  
+  setTargetVelocity(msg.data);
   /* Convert from linear velocity (m/s) to wheel velocity (rev/s) */
-  setTargetVelocity(msg.data * wheel_rev_per_meter_);
+  //setTargetVelocity(msg.data * wheel_rev_per_meter_);
 }
 
 /* Shutdown the motor controller by setting the velocity to 0.
@@ -170,6 +188,7 @@ MotorController<Controller>
   double wheel_radius;
   
   std::string motor_topic;
+  std::string twist_topic("twist");
   std::string wheel_encoder_topic;
   std::string velocity_topic;
   
@@ -177,7 +196,8 @@ MotorController<Controller>
   bool reverse_direction;
   double wheel_rev_per_meter;
   
-  
+  /* Get required parameters
+   */
   if (!n.getParam("motor_topic", motor_topic))
     exit(-1);
   ROS_INFO("P: motor_topic_ = %s", motor_topic.c_str());
@@ -198,14 +218,18 @@ MotorController<Controller>
     exit(-1);
   ROS_INFO("P: wheel_radius = %f", wheel_radius);
   
-  if (!n.getParam("velocity_timeout", velocity_expire_timeout))
-    exit(-1);
-  ROS_INFO("P: velocity_expire_timeout = %f", velocity_expire_timeout);
-  
   if (!n.getParam("reverse_direction", reverse_direction))
     exit(-1);
   ROS_INFO("P: reverse_direction_ = %u", reverse_direction);
-    
+  
+  /* Get optional parameters
+   */
+  twist_topic = n.param("twist_topic", twist_topic);
+  ROS_INFO("P: twist_topic = %s", twist_topic.c_str());
+  
+  velocity_expire_timeout = n.param("velocity_timeout", 0.5);
+  ROS_INFO("P: velocity_expire_timeout = %f", velocity_expire_timeout);
+  
   /* Calculate wheel_rev_per_meter_ */
   wheel_rev_per_meter = 1.0 / (wheel_radius * 2 * M_PI);
     
@@ -214,6 +238,7 @@ MotorController<Controller>
                               wheel_encoder_topic,
                               velocity_topic,
                               motor_topic,
+                              twist_topic,
                               wheel_rev_per_meter,
                               encoder_tics_per_revolution,
                               velocity_expire_timeout,
