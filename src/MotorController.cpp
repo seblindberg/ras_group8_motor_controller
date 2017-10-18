@@ -26,7 +26,8 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     controller_(controller),
     velocity_expire_timeout_(velocity_expire_timeout),
     reverse_direction_(reverse_direction),
-    meters_per_tics_(1.0 / (rev_per_meter * tics_per_rev))
+    meters_per_tics_(1.0 / (rev_per_meter * tics_per_rev)),
+    twist_msg_seq_(0)
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -145,10 +146,12 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
     motor_publisher_.publish(motor_msg);
     
     /* Publish twist */
-    twist_msg.header.stamp = msg.header.stamp;
+    twist_msg.header.stamp   = msg.header.stamp;
+    twist_msg.header.seq     = twist_msg_seq_;
     twist_msg.twist.linear.x = velocity;
     
     twist_publisher_.publish(twist_msg);
+    twist_msg_seq_ += 1;
     
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
     /* Publish the internal PID state */

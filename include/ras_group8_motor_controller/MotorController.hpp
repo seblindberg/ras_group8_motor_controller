@@ -84,6 +84,7 @@ private:
   double velocity_prev_;
   ros::Time velocity_target_expire_time_;
   phidgets::motor_encoder encoder_msg_prev_;
+  int32_t twist_msg_seq_;
 };
 
 }
