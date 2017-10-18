@@ -1,5 +1,5 @@
-motor_topic: /motorcontrol/cmd_vel
-encoder_topic: /motorcontrol/encoder
+motor_topic: cmd_vel
+encoder_topic: encoder
 velocity_topic: velocity
 gain:
   p: 15.0

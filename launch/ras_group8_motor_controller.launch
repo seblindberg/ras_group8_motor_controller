@@ -2,6 +2,10 @@
 		
 	<arg name="phidgets_serial" default="473021" />
 	
+	<!-- Connect the two nodes together -->
+	<remap from="motorcontrol/encoder" to="controller/encoder" />
+	<remap from="controller/cmd_vel" to="motorcontrol/cmd_vel" />
+	
 	<!-- Launch a motor controller -->
 	<node name="phidgets"
 	       pkg="phidgets"
