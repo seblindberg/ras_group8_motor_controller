@@ -40,7 +40,7 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     node_handle_.advertise<std_msgs::Float32>(motor_topic, 1);
   
   twist_publisher_ =
-    node_handle_.advertise<geometry_msgs::TwistStamped>(twist_topic, 1);
+    node_handle_.advertise<geometry_msgs::TwistStamped>(twist_topic, 1, true);
     
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Setup logger outputs here
