@@ -45,11 +45,13 @@ private:
   /* Accept the linear velocity as a float in m/s */
   void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
   
+  void publishTwist(const ros::Time& now, double velocity);
+  
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Optional method that publishes the pid controller state to the three fixed
    * topics reference, input and output.
    */
-  void publishPidState(double reference, double input, double output);
+  void publishState(double reference, double input, double output);
 #endif
   
   /* Node handle
@@ -67,9 +69,9 @@ private:
   ros::Publisher twist_publisher_;
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
-  ros::Publisher pid_reference_publisher_;
-  ros::Publisher pid_input_publisher_;
-  ros::Publisher pid_output_publisher_;
+  ros::Publisher state_reference_publisher_;
+  ros::Publisher state_input_publisher_;
+  ros::Publisher state_output_publisher_;
 #endif
     
   /* Parameters
@@ -84,7 +86,6 @@ private:
   double velocity_prev_;
   ros::Time velocity_target_expire_time_;
   phidgets::motor_encoder encoder_msg_prev_;
-  int32_t twist_msg_seq_;
 };
 
 }
