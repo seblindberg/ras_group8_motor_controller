@@ -237,7 +237,7 @@ MotorController<Controller>
   
   /* Get optional parameters
    */
-  velocity_topic = n.param("velocity_topic", std::string("velocity"))
+  velocity_topic = n.param("velocity_topic", std::string("velocity"));
   ROS_INFO("P: velocity_topic_ = %s", velocity_topic.c_str());
    
   reverse_direction = n.param("reverse_direction", false);
