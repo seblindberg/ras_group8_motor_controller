@@ -1,5 +1,4 @@
 #include <ras_group8_motor_controller/MotorController.hpp>
-
 #include <ras_group8_motor_controller/PIDController.hpp>
 #include <ras_group8_motor_controller/StaticController.hpp>
 
@@ -96,8 +95,8 @@ void MotorController<Controller>::publishTwist(const ros::Time& now,
 }
 
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
-  /* Optional method that publishes the pid controller state to the three fixed topics reference,
-   * input and output.
+  /* Optional method that publishes the pid controller state to the three fixed
+   * topics reference, input and output.
    */
 template<class Controller>
 void MotorController<Controller>::publishState(double reference, double input, double output)
@@ -135,7 +134,8 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
                  dt * meters_per_tics_;
                 
     /* Check that the set velocity has not expired */
-    if (velocity_target_expire_time_ < msg.header.stamp) {
+    if (velocity_target_ > 0 &&
+        velocity_target_expire_time_ < msg.header.stamp) {
       ROS_INFO("No new velocity setting for a while. Setting to zero.");
       velocity_target_ = 0.0;
     }
@@ -181,11 +181,8 @@ void MotorController<Controller>::velocityCallback(const std_msgs::Float32::Cons
 {
   std_msgs::Float32 msg = *ptr;
   
-  //ROS_INFO("New velocity: %f [m/s]", msg.data);
   /* Store the expiration time of the velocity */
   setTargetVelocity(msg.data);
-  /* Convert from linear velocity (m/s) to wheel velocity (rev/s) */
-  //setTargetVelocity(msg.data * wheel_rev_per_meter_);
 }
 
 /* Shutdown
@@ -212,7 +209,7 @@ MotorController<Controller>
   double wheel_radius;
   
   std::string motor_topic;
-  std::string twist_topic("twist");
+  std::string twist_topic;
   std::string wheel_encoder_topic;
   std::string velocity_topic;
   
@@ -230,10 +227,6 @@ MotorController<Controller>
     exit(-1);
   ROS_INFO("P: wheel_encoder_topic_ = %s", wheel_encoder_topic.c_str());
   
-  if (!n.getParam("velocity_topic", velocity_topic))
-    exit(-1);
-  ROS_INFO("P: velocity_topic_ = %s", velocity_topic.c_str());
-  
   if (!n.getParam("wheel_encoder_tics_per_rev", encoder_tics_per_revolution))
     exit(-1);
   ROS_INFO("P: encoder_tics_per_revolution_ = %f", encoder_tics_per_revolution);
@@ -242,13 +235,15 @@ MotorController<Controller>
     exit(-1);
   ROS_INFO("P: wheel_radius = %f", wheel_radius);
   
-  if (!n.getParam("reverse_direction", reverse_direction))
-    exit(-1);
-  ROS_INFO("P: reverse_direction_ = %u", reverse_direction);
-  
   /* Get optional parameters
    */
-  twist_topic = n.param("twist_topic", twist_topic);
+  velocity_topic = n.param("velocity_topic", std::string("velocity"))
+  ROS_INFO("P: velocity_topic_ = %s", velocity_topic.c_str());
+   
+  reverse_direction = n.param("reverse_direction", false);
+  ROS_INFO("P: reverse_direction_ = %u", reverse_direction);
+   
+  twist_topic = n.param("twist_topic", std::string("twist"));
   ROS_INFO("P: twist_topic = %s", twist_topic.c_str());
   
   velocity_expire_timeout = n.param("velocity_timeout", 0.5);

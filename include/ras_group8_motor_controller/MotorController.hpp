@@ -2,7 +2,6 @@
 
 #include <ros/ros.h>
 #include <string.h>
-#include <std_srvs/Trigger.h>
 #include <std_msgs/Float32.h>
 #include <phidgets/motor_encoder.h>
 
@@ -26,32 +25,41 @@ public:
                   double velocity_expire_timeout,
                   bool reverse_direction);
   
-  virtual ~MotorController();
+  virtual
+    ~MotorController();
   
-  void setTargetVelocity(double velocity);
+  void
+    setTargetVelocity(double velocity);
   
-  double velocity()
+  double
+    velocity()
   {
     return velocity_prev_;
   }
   
-  void shutdown();
+  void
+    shutdown();
   
-  static MotorController<Controller> load(ros::NodeHandle &n, Controller& controller);
+  static MotorController<Controller>
+    load(ros::NodeHandle &n, Controller& controller);
 
 private:
-  void wheelEncoderCallback(const phidgets::motor_encoder& msg);
+  void
+    wheelEncoderCallback(const phidgets::motor_encoder& msg);
   
   /* Accept the linear velocity as a float in m/s */
-  void velocityCallback(const std_msgs::Float32::ConstPtr& msg);
+  void
+    velocityCallback(const std_msgs::Float32::ConstPtr& msg);
   
-  void publishTwist(const ros::Time& now, double velocity);
+  void
+    publishTwist(const ros::Time& now, double velocity);
   
 #if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
   /* Optional method that publishes the pid controller state to the three fixed
    * topics reference, input and output.
    */
-  void publishState(double reference, double input, double output);
+  void
+    publishState(double reference, double input, double output);
 #endif
   
   /* Node handle
