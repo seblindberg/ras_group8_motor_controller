@@ -12,7 +12,6 @@ int main(int argc, char **argv)
   /* Load the loop update rate.
      Default: 10 Hz  */
   double update_rate = node_handle.param("update_rate", 10.0);
-  ros::Rate loop_rate(update_rate);
   
   /* Setup the PID controller with values stored in the
      parameters server. */
@@ -24,9 +23,11 @@ int main(int argc, char **argv)
   MotorController<PIDController> motor_controller =
     MotorController<PIDController>::load(node_handle, pid_controller);
   
+  motor_controller.run(update_rate);
+  
+  /* TODO: Replace with ros::spin()? */
   while (node_handle.ok()) {
     ros::spinOnce();
-    loop_rate.sleep();
   }
   
   motor_controller.shutdown();

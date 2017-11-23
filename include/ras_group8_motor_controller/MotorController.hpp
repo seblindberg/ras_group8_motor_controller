@@ -38,6 +38,12 @@ public:
   }
   
   void
+    update(const ros::TimerEvent& timer_event);
+  
+  void
+    run(double update_rate);
+  
+  void
     shutdown();
   
   static MotorController<Controller>
@@ -90,10 +96,21 @@ private:
   
   /* Variables */
   Controller& controller_;
+  
+  ros::Timer update_timer_;
+  
   double velocity_target_;
   double velocity_prev_;
+  
+  double velocity_average_;
+  int    velocity_average_samples_;
+  
+  ros::Time last_update_;
+  bool      last_update_initialized_;
+  
   ros::Time velocity_target_expire_time_;
   phidgets::motor_encoder encoder_msg_prev_;
+  bool encoder_msg_prev_initialized_;
 };
 
 }

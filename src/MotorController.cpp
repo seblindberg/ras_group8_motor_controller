@@ -25,7 +25,11 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     controller_(controller),
     velocity_expire_timeout_(velocity_expire_timeout),
     reverse_direction_(reverse_direction),
-    meters_per_tics_(1.0 / (rev_per_meter * tics_per_rev))
+    meters_per_tics_(1.0 / (rev_per_meter * tics_per_rev)),
+    velocity_average_(0.0),
+    velocity_average_samples_(0),
+    encoder_msg_prev_initialized_(false),
+    last_update_initialized_(false)
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -121,25 +125,80 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
 {
   double velocity;
   double dt;
-  std_msgs::Float32 motor_msg;
   geometry_msgs::TwistStamped twist_msg;
   
-  /* Calculate delta time */
-  dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
+  if (encoder_msg_prev_initialized_) {
+    /* Calculate delta time */
+    dt = (msg.header.stamp - encoder_msg_prev_.header.stamp).toSec();
+      
+    /* If we don't seem to have missed any messages */
+    if (0 < dt && dt < 0.2) { /* TODO: Do not hard-code this value */
+      /* Calculate wheel velocity */
+      velocity = (double)(msg.count - encoder_msg_prev_.count) /
+                   dt * meters_per_tics_;
+                   
+      /* Add to the average velocity */
+      velocity_average_ += velocity;
+      velocity_average_samples_ ++;
+      
+      /* Publish the twist */
+      publishTwist(msg.header.stamp, velocity);
+    }
+  } else {
+    encoder_msg_prev_initialized_ = true;
+  }
     
-  /* If we don't seem to have missed any messages */
-  if (0 < dt && dt < 0.2) { /* TODO: Do not hard-code this value */
-    /* Calculate wheel velocity */
-    velocity = (double)(msg.count - encoder_msg_prev_.count) /
-                 dt * meters_per_tics_;
-                
+  /* Store the current message */
+  std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
+}
+
+/* Veclocity Callback
+ */
+template<class Controller>
+void MotorController<Controller>::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
+{
+  std_msgs::Float32 msg = *ptr;
+  
+  /* Store the expiration time of the velocity */
+  setTargetVelocity(msg.data);
+}
+
+template<class Controller> void
+MotorController<Controller>::update(const ros::TimerEvent& timer_event)
+{
+  ros::Time now = ros::Time::now();
+  double velocity;
+  std_msgs::Float32 motor_msg;
+  
+  if (!last_update_initialized_) {
+    last_update_initialized_ = true;
+    /* Reset the controller */
+    controller_.reset();
+    
+    /* Send 0 velocity as the first message */
+    motor_msg.data = 0.0;
+    velocity       = 0.0;
+  } else {
+    const double dt = (now - last_update_).toSec();
+    
+    /* Calculate the velocity as the average over the
+       accumulated */
+    if (velocity_average_samples_ == 0) {
+      velocity = 0.0;
+    } else {
+      velocity = velocity_average_ / velocity_average_samples_;
+      velocity_average_samples_ = 0;
+    }
+    
+    velocity_average_ = 0.0;
+    
     /* Check that the set velocity has not expired */
     if (velocity_target_ > 0 &&
-        velocity_target_expire_time_ < msg.header.stamp) {
+        velocity_target_expire_time_ < now) {
       ROS_INFO("No new velocity setting for a while. Setting to zero.");
       velocity_target_ = 0.0;
     }
-    
+  
     if (velocity_target_ == 0.0) {
       motor_msg.data = 0.0;
     } else {
@@ -152,37 +211,36 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
           controller_.update(velocity,  velocity_target_, dt);
       }
     }
-    
+  
     if (reverse_direction_) {
       velocity = -velocity;
     }
-    
-    /* Set new motor value */
-    motor_publisher_.publish(motor_msg);
-    
-    publishTwist(msg.header.stamp, velocity);
-    
-#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
-    /* Publish the internal PID state */
-    publishState(velocity_target_, velocity, motor_msg.data);
-#endif
-  }
-    
-  /* Store the current message */
-  std::memcpy(&encoder_msg_prev_, &msg, sizeof(phidgets::motor_encoder));
   
-  velocity_prev_ = velocity;
+    /* TODO: Not needed? */
+    // velocity_prev_ = velocity;
+  }
+  
+  /* Set new motor value */
+  motor_publisher_.publish(motor_msg);
+  
+  last_update_ = now;
+  
+#if RAS_GROUP8_MOTOR_CONTROLLER_PUBLISH_STATE
+  /* Publish the internal PID state */
+  publishState(velocity_target_, velocity, motor_msg.data);
+#endif
 }
 
-/* Veclocity Callback
- */
-template<class Controller>
-void MotorController<Controller>::velocityCallback(const std_msgs::Float32::ConstPtr& ptr)
+template<class Controller> void
+MotorController<Controller>::run(double update_rate)
 {
-  std_msgs::Float32 msg = *ptr;
+  /* Clear any previous runs */
+  last_update_initialized_ = false;
   
-  /* Store the expiration time of the velocity */
-  setTargetVelocity(msg.data);
+  /* Attatch the update timer */
+  update_timer_ =
+    node_handle_.createTimer(ros::Duration(1.0 / update_rate),
+                             &MotorController::update, this);
 }
 
 /* Shutdown
