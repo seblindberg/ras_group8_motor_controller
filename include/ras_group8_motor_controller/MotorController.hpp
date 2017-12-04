@@ -93,6 +93,7 @@ private:
   const ros::Duration velocity_expire_timeout_;
   const bool reverse_direction_;
   const double meters_per_tics_;
+  const int hysteresis_;
   
   /* Variables */
   Controller& controller_;

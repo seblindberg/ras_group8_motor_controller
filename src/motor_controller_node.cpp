@@ -26,9 +26,10 @@ int main(int argc, char **argv)
   motor_controller.run(update_rate);
   
   /* TODO: Replace with ros::spin()? */
-  while (node_handle.ok()) {
-    ros::spinOnce();
-  }
+  ros::spin();
+  // while (node_handle.ok()) {
+  //   ros::spinOnce();
+  // }
   
   motor_controller.shutdown();
   

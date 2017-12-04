@@ -43,7 +43,7 @@ double PIDController::update(double value, double target, double dt)
 
 void PIDController::reset()
 {
-  ROS_INFO("Clearing the integral error");
+  // ROS_INFO("Clearing the integral error");
   integral_   = 0.0;
   error_prev_ = 0.0;
 }

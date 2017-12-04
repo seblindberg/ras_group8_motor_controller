@@ -29,7 +29,8 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     velocity_average_(0.0),
     velocity_average_samples_(0),
     encoder_msg_prev_initialized_(false),
-    last_update_initialized_(false)
+    last_update_initialized_(false),
+    hysteresis_(10)
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -142,6 +143,10 @@ void MotorController<Controller>::wheelEncoderCallback(const phidgets::motor_enc
       velocity_average_samples_ ++;
       
       /* Publish the twist */
+      if (reverse_direction_) {
+        velocity = -velocity;
+      }
+      
       publishTwist(msg.header.stamp, velocity);
     }
   } else {
@@ -201,6 +206,7 @@ MotorController<Controller>::update(const ros::TimerEvent& timer_event)
   
     if (velocity_target_ == 0.0) {
       motor_msg.data = 0.0;
+      controller_.reset();
     } else {
       /* Update controller */
       if (reverse_direction_) {
@@ -210,14 +216,18 @@ MotorController<Controller>::update(const ros::TimerEvent& timer_event)
         motor_msg.data =
           controller_.update(velocity,  velocity_target_, dt);
       }
+      
+      /* Add hysteresis */
+      if (motor_msg.data < 0) {
+        motor_msg.data -= hysteresis_;
+      } else if (motor_msg.data > 0) {
+        motor_msg.data += hysteresis_;
+      }
     }
   
     if (reverse_direction_) {
       velocity = -velocity;
     }
-  
-    /* TODO: Not needed? */
-    // velocity_prev_ = velocity;
   }
   
   /* Set new motor value */
