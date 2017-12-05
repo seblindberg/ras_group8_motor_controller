@@ -3,7 +3,7 @@ encoder_topic: encoder
 velocity_topic: velocity
 gain:
   p: 10.0
-  i: 10.0
+  i: 5.0
   d: 0
 output_min: -30.0
 output_max: 30.0

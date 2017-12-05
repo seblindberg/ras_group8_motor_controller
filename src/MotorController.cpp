@@ -33,7 +33,11 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     velocity_average_samples_(0),
     encoder_msg_prev_initialized_(false),
     last_update_initialized_(false),
+<<<<<<< HEAD
     hysteresis_(15)
+=======
+    hysteresis_(12)
+>>>>>>> origin/master
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -84,7 +88,7 @@ template<class Controller>
 void MotorController<Controller>::setTargetVelocity(double velocity)
 {
   velocity_target_ = velocity;
-  velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
+  // velocity_target_expire_time_ = ros::Time::now() + velocity_expire_timeout_;
 }
 
 template<class Controller>
@@ -197,15 +201,15 @@ MotorController<Controller>::update(const ros::TimerEvent& timer_event)
       velocity = velocity_average_ / velocity_average_samples_;
       velocity_average_samples_ = 0;
     }
-    
+    /* Always clear the average */
     velocity_average_ = 0.0;
     
     /* Check that the set velocity has not expired */
-    if (velocity_target_ > 0 &&
-        velocity_target_expire_time_ < now) {
-      ROS_INFO("No new velocity setting for a while. Setting to zero.");
-      velocity_target_ = 0.0;
-    }
+    // if (velocity_target_ > 0 &&
+    //     velocity_target_expire_time_ < now) {
+    //   ROS_INFO("No new velocity setting for a while. Setting to zero.");
+    //   velocity_target_ = 0.0;
+    // }
   
     if (velocity_target_ == 0.0) {
       motor_msg.data = 0.0;
