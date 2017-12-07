@@ -197,7 +197,9 @@ MotorController<Controller>::update(const ros::TimerEvent& timer_event)
     /* Always clear the average */
     velocity_average_ = 0.0;
     
-    /* Check that the set velocity has not expired */
+    /* Check that the set velocity has not expired
+       TODO: Find bug in this that prevents the motor
+             controller from recovering after expiring */
     // if (velocity_target_ > 0 &&
     //     velocity_target_expire_time_ < now) {
     //   ROS_INFO("No new velocity setting for a while. Setting to zero.");
