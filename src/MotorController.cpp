@@ -8,6 +8,9 @@
 namespace ras_group8_motor_controller
 {
 
+static inline double
+  feed_forward(double input);
+
 /* Constructor
  */
 template<class Controller>
@@ -30,7 +33,11 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     velocity_average_samples_(0),
     encoder_msg_prev_initialized_(false),
     last_update_initialized_(false),
+<<<<<<< HEAD
+    hysteresis_(15)
+=======
     hysteresis_(12)
+>>>>>>> origin/master
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
@@ -212,10 +219,10 @@ MotorController<Controller>::update(const ros::TimerEvent& timer_event)
     } else {
       /* Update controller */
       if (reverse_direction_) {
-        motor_msg.data =
+        motor_msg.data = feed_forward(velocity_target_) +
           controller_.update(velocity, -velocity_target_, dt);
       } else {
-        motor_msg.data =
+        motor_msg.data = feed_forward(velocity_target_) +
           controller_.update(velocity,  velocity_target_, dt);
       }
       
@@ -334,6 +341,27 @@ MotorController<Controller>
                               reverse_direction);
   
   return object;
+}
+
+/* Input to the motor [0,~3] */
+double
+feed_forward(double input)
+{
+  const double fabs_input = fabs(input);
+  
+  if (fabs_input < 0.1) {
+    return 0;
+  }
+  
+  if (fabs_input < 0.7) {
+    if (input < 0) {
+      input = -0.7;
+    } else {
+      input = 0.7;
+    }
+  }
+  
+  return 16 * input;
 }
 
 /* Force te compiler to compile the PIDController version of this class.
