@@ -33,11 +33,7 @@ MotorController<Controller>::MotorController(ros::NodeHandle& node_handle,
     velocity_average_samples_(0),
     encoder_msg_prev_initialized_(false),
     last_update_initialized_(false),
-<<<<<<< HEAD
-    hysteresis_(15)
-=======
     hysteresis_(12)
->>>>>>> origin/master
 {
   wheel_encoder_subscriber_ =
     node_handle_.subscribe(wheel_encoder_topic, 1,
